@@ -24,22 +24,15 @@ if __FILE__ == $0
     dirname = File.dirname path
     internal_path = path.sub %r[^#{__dir__}/], ''
 
-    if File.directory? path
-      type = :d
-    elsif File.file? path
-      type = :f
-    end
-
     archive = File.join(dirname, basename) + '.zip'
     FileUtils.rm archive, force: true
 
     Zip::File.open(archive, Zip::File::CREATE) do | zipfile |
-      case type
-      when :d
+      if File.directory? path
         Dir["#{internal_path}/**/**"].map{|e|e.sub %r[^#{internal_path}/],''}.reject{|f|f==archive}.each do | item |
           zipfile.add(item, File.join(internal_path, item))
         end
-      when :f
+      elsif File.file? path
         zipfile.add(internal_path, path)
       end
     end
