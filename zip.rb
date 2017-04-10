@@ -19,36 +19,28 @@ if __FILE__ == $0
 
   paths = argv
 
-  paths.each do | path |
+  paths.map{|e|File.expand_path e}.each do | path |
+    basename = File.basename path
+    dirname = File.dirname path
+    internal_path = path.sub %r[^#{__dir__}/], ''
+
     if File.directory? path
       type = :d
     elsif File.file? path
       type = :f
     end
 
-    case type
-    when :d
-      path = File.expand_path path
-      archive = File.join(__dir__, File.basename(path)) + '.zip'
-# p archive
-    when :f
-      basename = File.basename(path)
-      archive = path + '.zip'
-    end
+    archive = File.join(dirname, basename) + '.zip'
     FileUtils.rm archive, force: true
-# p archive
+
     Zip::File.open(archive, Zip::File::CREATE) do | zipfile |
       case type
       when :d
-        Dir["#{path}/**/**"].reject{|f|f==archive}.each do | item |
-          basename = File.basename(item)
-# p basename
-# p item
-          zipfile.add(basename, item)
+        Dir["#{internal_path}/**/**"].map{|e|e.sub %r[^#{internal_path}/],''}.reject{|f|f==archive}.each do | item |
+          zipfile.add(item, File.join(internal_path, item))
         end
       when :f
-# p path
-        zipfile.add(basename, path)
+        zipfile.add(internal_path, path)
       end
     end
   end
